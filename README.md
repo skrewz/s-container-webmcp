@@ -65,30 +65,7 @@ This creates a `server` binary in the current directory.
 
 ## Usage
 
-### Running the Server
-
-**Stdio Transport (default):**
-
-The server communicates over stdio (stdin/stdout), which is the standard transport for MCP servers:
-
-```bash
-./server
-```
-
-**HTTP/SSE Transport:**
-
-To use HTTP streaming (SSE) transport:
-
-```bash
-./server -transport http
-```
-
-The server uses a single, realistic browser user-agent for web requests:
-```
-Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
-```
-
-HTTP requests have a 30-second timeout.
+Generally, you'll run a container next to your IDE or MCP consumer. Run `make run` to see how.
 
 ## Development
 
@@ -97,6 +74,17 @@ make build    # Build the server binary
 make test     # Run all tests
 make clean    # Remove built binary
 ```
+
+## Container Support
+
+### Building and running the Container
+
+```bash
+make container-build   # Build with Podman
+make container-run     # Run on port 3952
+```
+
+The container runs in HTTP transport mode by default, listening on port 3952.
 
 ## License
 

@@ -1,0 +1,9 @@
+.git
+.gitignore
+vendor/
+*.md
+!go.mod
+!go.sum
+server
+*.test
+coverage.out
