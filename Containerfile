@@ -26,4 +26,4 @@ USER appuser
 EXPOSE 3952
 
 ENTRYPOINT ["./server"]
-CMD ["-transport", "http", "-addr", ":3952"]
+CMD ["-transport", "http", "-port", "3952"]

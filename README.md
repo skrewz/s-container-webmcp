@@ -65,7 +65,25 @@ This creates a `server` binary in the current directory.
 
 ## Usage
 
-Generally, you'll run a container next to your IDE or MCP consumer. Run `make run` to see how.
+### Running the Server
+
+
+### MCP Configuration
+
+Generally, you'll run a container next to your IDE or MCP consumer. Run `make run` to see how. You'd then refer to it from your MCP configuration. E.g. from OpenCode:
+
+```json
+{
+    "$schema": "https://opencode.ai/config.json",
+    // [...]
+    "mcp": {
+        "webmcp": {
+          "type": "remote",
+          "url": "http://localhost:3952/sse",
+          "enabled": true,
+        },
+    // [...]
+```
 
 ## Development
 
@@ -84,8 +102,14 @@ make container-build   # Build with Podman
 make container-run     # Run on port 3952
 ```
 
-The container runs in HTTP transport mode by default, listening on port 3952.
+### Stdio Transport in Container
 
-## License
+To run with stdio transport (for MCP clients):
+
+```bash
+podman run -i web-search-mcp -transport stdio
+```
+
+## Licence
 
 This project is licensed under the MIT-style license.
