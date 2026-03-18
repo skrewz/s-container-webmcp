@@ -58,8 +58,7 @@ Fetches a URL and converts the HTML content to markdown.
 ### Build from Source
 
 ```bash
-cd mcp-server
-go build ./cmd/server
+make build
 ```
 
 This creates a `server` binary in the current directory.
@@ -68,13 +67,21 @@ This creates a `server` binary in the current directory.
 
 ### Running the Server
 
+**Stdio Transport (default):**
+
 The server communicates over stdio (stdin/stdout), which is the standard transport for MCP servers:
 
 ```bash
 ./server
 ```
 
-### Configuration
+**HTTP/SSE Transport:**
+
+To use HTTP streaming (SSE) transport:
+
+```bash
+./server -transport http
+```
 
 The server uses a single, realistic browser user-agent for web requests:
 ```
@@ -82,6 +89,14 @@ Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
 ```
 
 HTTP requests have a 30-second timeout.
+
+## Development
+
+```bash
+make build    # Build the server binary
+make test     # Run all tests
+make clean    # Remove built binary
+```
 
 ## License
 
