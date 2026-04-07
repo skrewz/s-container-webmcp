@@ -6,8 +6,12 @@ package scraper
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -271,4 +275,56 @@ func trimSpace(s string) string {
 		end--
 	}
 	return s[start:end]
+}
+
+func TestDebugLogging(t *testing.T) {
+	os.Setenv("DEBUG", "DEBUG")
+	defer os.Unsetenv("DEBUG")
+
+	var logOutput strings.Builder
+	var mu sync.Mutex
+
+	DebugLogger = func(format string, args ...interface{}) {
+		mu.Lock()
+		defer mu.Unlock()
+		logOutput.WriteString(fmt.Sprintf(format+"\n", args...))
+	}
+
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte(`<html><body><h1>Test</h1></body></html>`))
+		if err != nil {
+			t.Fatalf("failed to write response: %v", err)
+		}
+	}))
+	defer testServer.Close()
+
+	scraper := NewScraper("")
+	ctx := context.Background()
+
+	_, err := scraper.Fetch(ctx, testServer.URL)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	mu.Lock()
+	output := logOutput.String()
+	mu.Unlock()
+
+	if output == "" {
+		t.Fatal("expected debug output, got empty string")
+	}
+
+	if !strings.Contains(output, "[DEBUG] Request:") {
+		t.Errorf("expected [DEBUG] Request: in output, got:\n%s", output)
+	}
+
+	if !strings.Contains(output, "[DEBUG] Response:") {
+		t.Errorf("expected [DEBUG] Response: in output, got:\n%s", output)
+	}
+
+	if !strings.Contains(output, "[DEBUG] Response body") {
+		t.Errorf("expected [DEBUG] Response body in output, got:\n%s", output)
+	}
 }

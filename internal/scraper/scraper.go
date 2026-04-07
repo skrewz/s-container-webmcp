@@ -9,12 +9,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"golang.org/x/net/html"
 )
+
+var DebugLogger func(format string, args ...interface{})
+
+func init() {
+	DebugLogger = func(format string, args ...interface{}) {
+		fmt.Fprintf(os.Stderr, format+"\n", args...)
+	}
+}
 
 const (
 	defaultUserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0"
@@ -24,6 +33,7 @@ const (
 type Scraper struct {
 	client    *http.Client
 	userAgent string
+	debug     bool
 }
 
 func NewScraper(userAgent string) *Scraper {
@@ -31,11 +41,14 @@ func NewScraper(userAgent string) *Scraper {
 		userAgent = defaultUserAgent
 	}
 
+	debug := strings.Contains(strings.ToUpper(os.Getenv("DEBUG")), "DEBUG")
+
 	return &Scraper{
 		client: &http.Client{
 			Timeout: defaultTimeout,
 		},
 		userAgent: userAgent,
+		debug:     debug,
 	}
 }
 
@@ -58,11 +71,29 @@ func (s *Scraper) FetchHTML(ctx context.Context, urlStr string) (string, error) 
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 
+	if s.debug {
+		DebugLogger("[DEBUG] Request: %s %s", req.Method, urlStr)
+		for name, values := range req.Header {
+			for _, value := range values {
+				DebugLogger("[DEBUG]   %s: %s", name, value)
+			}
+		}
+	}
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("fetching URL: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if s.debug {
+		DebugLogger("[DEBUG] Response: %s %s", resp.Status, urlStr)
+		for name, values := range resp.Header {
+			for _, value := range values {
+				DebugLogger("[DEBUG]   %s: %s", name, value)
+			}
+		}
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -76,6 +107,11 @@ func (s *Scraper) FetchHTML(ctx context.Context, urlStr string) (string, error) 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("reading response body: %w", err)
+	}
+
+	if s.debug {
+		bodyStr := string(body)
+		DebugLogger("[DEBUG] Response body (%d bytes):\n%s", len(bodyStr), bodyStr)
 	}
 
 	return string(body), nil
