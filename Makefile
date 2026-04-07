@@ -10,7 +10,7 @@ clean:
 	rm -f server
 
 container-build:
-	podman build -t web-search-mcp .
+	podman build -t s-container-webmcp .
 
 container-run:
-	podman run -p 3952:3952 web-search-mcp
+	podman run -e DEBUG -p 3952:3952 s-container-webmcp
