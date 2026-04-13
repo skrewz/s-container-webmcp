@@ -10,7 +10,7 @@ clean:
 	rm -f server
 
 container-build:
-	podman build -t s-container-webmcp .
+	podman build --no-cache -t s-container-webmcp .
 
 container-run:
 	podman run -e DEBUG -p 3952:3952 s-container-webmcp
