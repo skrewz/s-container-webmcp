@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -14,6 +15,8 @@ import (
 	"github.com/skrewz/web-search-mcp/internal/mcplogger"
 	"github.com/skrewz/web-search-mcp/tools"
 )
+
+type remotePortKey struct{}
 
 func main() {
 	transport := flag.String("transport", "stdio", "Transport protocol: stdio or http")
@@ -45,6 +48,14 @@ func main() {
 			sid := sessionIDCounter.Add(1)
 			baseLogger.Info("HTTP session starting", "session_id", sid)
 
+			// Extract remote port for logging
+			remotePort := "unknown"
+			if hostPort := r.RemoteAddr; hostPort != "" {
+				if _, port, err := net.SplitHostPort(hostPort); err == nil {
+					remotePort = port
+				}
+			}
+
 			// Create a new server instance per connection to avoid race conditions
 			server := mcp.NewServer(
 				&mcp.Implementation{
@@ -52,7 +63,7 @@ func main() {
 					Version: "1.0.0",
 				},
 				&mcp.ServerOptions{
-					Logger: enhancedLogger,
+					Logger: enhancedLogger.With("remote_port", remotePort),
 					GetSessionID: func() string {
 						return fmt.Sprintf("%d", sid)
 					},
