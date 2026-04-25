@@ -109,11 +109,6 @@ func (s *Scraper) FetchHTML(ctx context.Context, urlStr string) (string, error) 
 		return "", fmt.Errorf("reading response body: %w", err)
 	}
 
-	if s.debug {
-		bodyStr := string(body)
-		DebugLogger("[DEBUG] Response body (%d bytes):\n%s", len(bodyStr), bodyStr)
-	}
-
 	return string(body), nil
 }
 
