@@ -9,14 +9,11 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"sync/atomic"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/skrewz/web-search-mcp/internal/mcplogger"
 	"github.com/skrewz/web-search-mcp/tools"
 )
-
-type remotePortKey struct{}
 
 func main() {
 	transport := flag.String("transport", "stdio", "Transport protocol: stdio or http")
@@ -38,16 +35,9 @@ func main() {
 	// Wrap logger to add session context and enhanced error logging
 	enhancedLogger := mcplogger.NewEnhancedLogger(baseLogger.WithGroup("mcp"))
 
-	// Counter for generating session IDs
-	var sessionIDCounter atomic.Uint64
-
 	if *transport == "http" {
 		addr := fmt.Sprintf(":%d", *port)
-		sseHandler := mcp.NewSSEHandler(func(r *http.Request) *mcp.Server {
-			// Generate session ID for HTTP transport
-			sid := sessionIDCounter.Add(1)
-			baseLogger.Info("HTTP session starting", "session_id", sid)
-
+		streamableHandler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
 			// Extract remote port for logging
 			remotePort := "unknown"
 			if hostPort := r.RemoteAddr; hostPort != "" {
@@ -56,7 +46,7 @@ func main() {
 				}
 			}
 
-			// Create a new server instance per connection to avoid race conditions
+			// Create a new server instance per request for stateless mode
 			server := mcp.NewServer(
 				&mcp.Implementation{
 					Name:    "web-search-mcp",
@@ -64,20 +54,19 @@ func main() {
 				},
 				&mcp.ServerOptions{
 					Logger: enhancedLogger.With("remote_port", remotePort),
-					GetSessionID: func() string {
-						return fmt.Sprintf("%d", sid)
-					},
 					InitializedHandler: func(ctx context.Context, req *mcp.InitializedRequest) {
-						sessionLogger := mcplogger.WithSession(enhancedLogger, sid)
-						sessionLogger.Info("initialization completed")
+						baseLogger.Info("HTTP session initialized", "remote_port", remotePort)
 					},
 				},
 			)
 			tools.RegisterTools(server)
 			return server
-		}, nil)
-		http.Handle("/sse", sseHandler)
-		log.Printf("Starting web-search-mcp server on HTTP transport at %s/sse\n", addr)
+		}, &mcp.StreamableHTTPOptions{
+			Stateless:    true,
+			JSONResponse: true,
+		})
+		http.Handle("/mcp", streamableHandler)
+		log.Printf("Starting web-search-mcp server on HTTP transport at %s/mcp\n", addr)
 		if err := http.ListenAndServe(addr, nil); err != nil {
 			log.Fatalf("Server failed: %v", err)
 		}

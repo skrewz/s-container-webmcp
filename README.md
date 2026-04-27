@@ -79,7 +79,7 @@ Generally, you'll run a container next to your IDE or MCP consumer. Run `make ru
     "mcp": {
         "webmcp": {
           "type": "remote",
-          "url": "http://localhost:3952/sse",
+          "url": "http://localhost:3952/mcp",
           "enabled": true,
         },
     // [...]
