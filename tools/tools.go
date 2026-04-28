@@ -39,7 +39,7 @@ func RegisterTools(server *mcp.Server) {
 
 	getURLTool := &mcp.Tool{
 		Name:        "get_url",
-		Description: "Fetch a URL and convert the HTML content to markdown",
+		Description: "Fetch a URL and convert the HTML content to markdown (not appropriate for web searches)",
 	}
 
 	mcp.AddTool(server, getURLTool, getURLHandler)
